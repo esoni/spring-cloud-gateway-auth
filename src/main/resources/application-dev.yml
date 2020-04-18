@@ -1,0 +1,62 @@
+security-rules:
+  #10 minutes
+  maxInactiveInterval: 600
+  principalHeaderName: 'x-auth-principal'
+  tokenHeaderName: 'x-auth-token'
+  exceptions:
+    - method: 'POST'
+      urlRegex: '/users[/]?'
+    - method: 'POST'
+      urlRegex: '/login[/]?'
+server:
+  port: ${PORT:8080}
+logging:
+  level:
+    .org:
+      springframework: DEBUG
+      cloud:
+        gateway:
+          filter:
+            factory: TRACE
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    register-with-eureka: true
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8081/eureka/}
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      routes:
+        - id: account-ws
+          uri: lb://ACCOUNT-WS
+          order: 0
+          predicates:
+            - Path=/account-ws/**
+          filters:
+            - StripPrefix=1 #Remove the prefix
+        - id: authentication-ws
+          uri: lb://AUTH-WS
+          order: 1
+          predicates:
+            - Path=/auth-ws/**
+          filters:
+            - StripPrefix=1 #Remove the prefix
+        - id: order-ws
+          uri: lb://ORDER-WS
+          order: 1
+          predicates:
+            - Path=/order-ws/**
+          filters:
+            - StripPrefix=1 #Remove the prefix
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      repositories:
+        enabled: true
+
